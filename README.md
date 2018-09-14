@@ -11,10 +11,10 @@ AF_PACKETを用いたユーザ空間プロトコルスタックをDPDKに対応�
 
 ## AF_PACKET
 
-Myeth.ini の作成
+MyEth.ini の作成
 
 ```
-cat << _EOF_ > Myeth.ini
+cat << _EOF_ > MyEth.ini
 IP-TTL=64
 MTU=1500
 MSS=1460
@@ -31,7 +31,7 @@ _EOF_
 
 ```
 make
-./Myeth
+./MyEth
 ```
 
 ## DPDK

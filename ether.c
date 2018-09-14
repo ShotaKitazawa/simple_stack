@@ -121,7 +121,7 @@ char	buf1[80];
 	return;
 }
 
-int EtherSend(int soc,u_int8_t smac[6],u_int8_t dmac[6],u_int16_t type,u_int8_t *data,int len)
+int EtherSend(device_t *device,u_int8_t smac[6],u_int8_t dmac[6],u_int16_t type,u_int8_t *data,int len)
 {
 struct ether_header	*eh;
 u_int8_t	*ptr,sbuf[sizeof(struct ether_header)+ETHERMTU];
@@ -149,13 +149,13 @@ int	padlen;
 		ptr+=padlen;
 	}
 
-	write(soc,sbuf,ptr-sbuf);
+	write(device->sock,sbuf,ptr-sbuf);
 	print_ether_header(eh);
 
 	return(0);
 }
 
-int EtherRecv(int soc,u_int8_t *in_ptr,int in_len)
+int EtherRecv(device_t *device,u_int8_t *in_ptr,int in_len)
 {
 struct ether_header	*eh;
 u_int8_t	*ptr=in_ptr;
@@ -170,10 +170,10 @@ int	len=in_len;
 	}
 
 	if(ntohs(eh->ether_type)==ETHERTYPE_ARP){
-		ArpRecv(soc,eh,ptr,len);
+		ArpRecv(device,eh,ptr,len);
 	}
 	else if(ntohs(eh->ether_type)==ETHERTYPE_IP){
-		IpRecv(soc,in_ptr,in_len,eh,ptr,len);
+		IpRecv(device,in_ptr,in_len,eh,ptr,len);
 	}
 
 	return(0);

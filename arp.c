@@ -240,7 +240,7 @@ int	i;
 	return(0);
 }
 
-int GetTargetMac(int soc,struct in_addr *daddr,u_int8_t dmac[6],int gratuitous)
+int GetTargetMac(device_t *device,struct in_addr *daddr,u_int8_t dmac[6],int gratuitous)
 {
 int	count;
 struct in_addr	addr;
@@ -255,10 +255,10 @@ struct in_addr	addr;
 	count=0;
 	while(!ArpSearchTable(&addr,dmac)){
 		if(gratuitous){
-			ArpSendRequestGratuitous(soc,&addr);
+			ArpSendRequestGratuitous(device,&addr);
 		}
 		else{
-			ArpSendRequest(soc,&addr);
+			ArpSendRequest(device,&addr);
 		}
 		DummyWait(DUMMY_WAIT_MS*(count+1));
 		count++;
@@ -270,7 +270,7 @@ struct in_addr	addr;
 	return(1);
 }
 
-int ArpSend(int soc,u_int16_t op,
+int ArpSend(device_t *device,u_int16_t op,
 	u_int8_t e_smac[6],u_int8_t e_dmac[6],
 	u_int8_t smac[6],u_int8_t dmac[6],
 	u_int8_t saddr[4],u_int8_t daddr[4])
@@ -292,7 +292,7 @@ struct ether_arp	arp;
 
 printf("=== ARP ===[\n");
 
-	EtherSend(soc,e_smac,e_dmac,ETHERTYPE_ARP,(u_int8_t *)&arp,sizeof(struct ether_arp));
+	EtherSend(device,e_smac,e_dmac,ETHERTYPE_ARP,(u_int8_t *)&arp,sizeof(struct ether_arp));
 
 print_ether_arp(&arp);
 printf("]\n");
@@ -300,7 +300,7 @@ printf("]\n");
 	return(0);
 }
 
-int ArpSendRequestGratuitous(int soc,struct in_addr *targetIp)
+int ArpSendRequestGratuitous(device_t *device,struct in_addr *targetIp)
 {
 union	{
 	u_int32_t	l;
@@ -309,12 +309,12 @@ union	{
 
 	saddr.l=0;
 	daddr.l=targetIp->s_addr;
-	ArpSend(soc,ARPOP_REQUEST,Param.vmac,BcastMac,Param.vmac,AllZeroMac,saddr.c,daddr.c);
+	ArpSend(device,ARPOP_REQUEST,Param.vmac,BcastMac,Param.vmac,AllZeroMac,saddr.c,daddr.c);
 
 	return(0);
 }
 
-int ArpSendRequest(int soc,struct in_addr *targetIp)
+int ArpSendRequest(device_t *device,struct in_addr *targetIp)
 {
 union	{
 	u_int32_t	l;
@@ -323,17 +323,17 @@ union	{
 
 	saddr.l=Param.vip.s_addr;
 	daddr.l=targetIp->s_addr;
-	ArpSend(soc,ARPOP_REQUEST,Param.vmac,BcastMac,Param.vmac,AllZeroMac,saddr.c,daddr.c);
+	ArpSend(device,ARPOP_REQUEST,Param.vmac,BcastMac,Param.vmac,AllZeroMac,saddr.c,daddr.c);
 
 	return(0);
 }
 
-int ArpCheckGArp(int soc)
+int ArpCheckGArp(device_t *device)
 {
 u_int8_t	dmac[6];
 char	buf1[80],buf2[80];
 
-	if(GetTargetMac(soc,&Param.vip,dmac,1)){
+	if(GetTargetMac(device,&Param.vip,dmac,1)){
 		printf("ArpCheckGArp:%s use %s\n",inet_ntop(AF_INET,&Param.vip,buf1,sizeof(buf1)),my_ether_ntoa_r(dmac,buf2));
 		return(0);
 	}
@@ -341,7 +341,7 @@ char	buf1[80],buf2[80];
 	return(1);
 }
 
-int ArpRecv(int soc,struct ether_header *eh,u_int8_t *data,int len)
+int ArpRecv(device_t *device,struct ether_header *eh,u_int8_t *data,int len)
 {
 struct ether_arp	*arp;
 u_int8_t	*ptr=data;
@@ -361,7 +361,7 @@ print_ether_arp(arp);
 printf("]\n");
 			addr.s_addr=(arp->arp_spa[3]<<24)|(arp->arp_spa[2]<<16)|(arp->arp_spa[1]<<8)|(arp->arp_spa[0]);
 			ArpAddTable(arp->arp_sha,&addr);
-			ArpSend(soc,ARPOP_REPLY,
+			ArpSend(device,ARPOP_REPLY,
 				Param.vmac,eh->ether_shost,
 				Param.vmac,arp->arp_sha,
 				arp->arp_tpa,arp->arp_spa);

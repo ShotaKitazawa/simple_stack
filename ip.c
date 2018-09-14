@@ -155,7 +155,7 @@ int	i;
 	return(-1);
 }
 
-int IpRecv(int soc,u_int8_t *raw,int raw_len,struct ether_header *eh,u_int8_t *data,int len)
+int IpRecv(device_t *device,u_int8_t *raw,int raw_len,struct ether_header *eh,u_int8_t *data,int len)
 {
 struct ip	*ip;
 u_int8_t	option[1500];
@@ -203,13 +203,13 @@ u_int8_t	*ptr=data;
 	if(!(ntohs(ip->ip_off)&IP_MF)){
 		IpRecvBuf[no].len=off+plen;
 		if(ip->ip_p==IPPROTO_ICMP){
-			IcmpRecv(soc,raw,raw_len,eh,ip,IpRecvBuf[no].data,IpRecvBuf[no].len);
+			IcmpRecv(device,raw,raw_len,eh,ip,IpRecvBuf[no].data,IpRecvBuf[no].len);
 		}
 		else if(ip->ip_p==IPPROTO_UDP){
-			UdpRecv(soc,eh,ip,IpRecvBuf[no].data,IpRecvBuf[no].len);
+			UdpRecv(device,eh,ip,IpRecvBuf[no].data,IpRecvBuf[no].len);
 		}
 		else if(ip->ip_p==IPPROTO_TCP){
-			TcpRecv(soc,eh,ip,IpRecvBuf[no].data,IpRecvBuf[no].len);
+			TcpRecv(device,eh,ip,IpRecvBuf[no].data,IpRecvBuf[no].len);
 		}
 		IpRecvBufDel(ntohs(ip->ip_id));
 	}
@@ -217,7 +217,7 @@ u_int8_t	*ptr=data;
 	return(0);
 }
 
-int IpSendLink(int soc,u_int8_t smac[6],u_int8_t dmac[6],struct in_addr *saddr,struct in_addr *daddr,u_int8_t proto,int dontFlagment,int ttl,u_int8_t *data,int len)
+int IpSendLink(device_t *device,u_int8_t smac[6],u_int8_t dmac[6],struct in_addr *saddr,struct in_addr *daddr,u_int8_t proto,int dontFlagment,int ttl,u_int8_t *data,int len)
 {
 struct ip	*ip;
 u_int8_t	*dptr,*ptr,sbuf[ETHERMTU];
@@ -272,7 +272,7 @@ int	lest,sndLen,off,flagment;
 		memcpy(ptr,dptr,sndLen);
 		ptr+=sndLen;
 
-		EtherSend(soc,smac,dmac,ETHERTYPE_IP,sbuf,ptr-sbuf);
+		EtherSend(device,smac,dmac,ETHERTYPE_IP,sbuf,ptr-sbuf);
 		print_ip(ip);
 
 		dptr+=sndLen;
@@ -282,14 +282,14 @@ int	lest,sndLen,off,flagment;
 	return(0);
 }
 
-int IpSend(int soc,struct in_addr *saddr,struct in_addr *daddr,u_int8_t proto,int dontFlagment,int ttl,u_int8_t *data,int len)
+int IpSend(device_t *device,struct in_addr *saddr,struct in_addr *daddr,u_int8_t proto,int dontFlagment,int ttl,u_int8_t *data,int len)
 {
 u_int8_t	dmac[6];
 char	buf1[80];
 int	ret;
 
-	if(GetTargetMac(soc,daddr,dmac,0)){
-		ret=IpSendLink(soc,Param.vmac,dmac,saddr,daddr,proto,dontFlagment,ttl,data,len);
+	if(GetTargetMac(device,daddr,dmac,0)){
+		ret=IpSendLink(device,Param.vmac,dmac,saddr,daddr,proto,dontFlagment,ttl,data,len);
 	}
 	else{
 		printf("IpSend:%s Destination Host Unreachable\n",inet_ntop(AF_INET,daddr,buf1,sizeof(buf1)));

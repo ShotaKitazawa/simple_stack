@@ -185,7 +185,7 @@ int	no;
 	return(0);
 }
 
-int UdpSendLink(int soc,u_int8_t smac[6],u_int8_t dmac[6],struct in_addr *saddr,struct in_addr *daddr,u_int16_t sport,u_int16_t dport,int dontFlagment,u_int8_t *data,int len)
+int UdpSendLink(device_t *device,u_int8_t smac[6],u_int8_t dmac[6],struct in_addr *saddr,struct in_addr *daddr,u_int16_t sport,u_int16_t dport,int dontFlagment,u_int8_t *data,int len)
 {
 u_int8_t	*ptr,sbuf[64*1024];
 struct udphdr   *udp;
@@ -204,7 +204,7 @@ struct udphdr   *udp;
 	udp->check=UdpChecksum(saddr,daddr,IPPROTO_UDP,sbuf,ptr-sbuf);
 
 printf("=== UDP ===[\n");
-	IpSendLink(soc,smac,dmac,saddr,daddr,IPPROTO_UDP,dontFlagment,Param.IpTTL,sbuf,ptr-sbuf);
+	IpSendLink(device,smac,dmac,saddr,daddr,IPPROTO_UDP,dontFlagment,Param.IpTTL,sbuf,ptr-sbuf);
 print_udp(udp);
 print_hex(data,len);
 printf("]\n");
@@ -212,7 +212,7 @@ printf("]\n");
 	return(0);
 }
 
-int UdpSend(int soc,struct in_addr *saddr,struct in_addr *daddr,u_int16_t sport,u_int16_t dport,int dontFlagment,u_int8_t *data,int len)
+int UdpSend(device_t *device,struct in_addr *saddr,struct in_addr *daddr,u_int16_t sport,u_int16_t dport,int dontFlagment,u_int8_t *data,int len)
 {
 u_int8_t	*ptr,sbuf[64*1024];
 struct udphdr   *udp;
@@ -231,7 +231,7 @@ struct udphdr   *udp;
 	udp->check=UdpChecksum(saddr,daddr,IPPROTO_UDP,sbuf,ptr-sbuf);
 
 printf("=== UDP ===[\n");
-	IpSend(soc,saddr,daddr,IPPROTO_UDP,dontFlagment,Param.IpTTL,sbuf,ptr-sbuf);
+	IpSend(device,saddr,daddr,IPPROTO_UDP,dontFlagment,Param.IpTTL,sbuf,ptr-sbuf);
 print_udp(udp);
 print_hex(data,len);
 printf("]\n");
@@ -239,7 +239,7 @@ printf("]\n");
 	return(0);
 }
 
-int UdpRecv(int soc,struct ether_header *eh,struct ip *ip,u_int8_t *data,int len)
+int UdpRecv(device_t *device,struct ether_header *eh,struct ip *ip,u_int8_t *data,int len)
 {
 struct udphdr   *udp;
 u_int8_t	*ptr=data;
@@ -259,7 +259,7 @@ int	udplen;
 	udplen-=sizeof(struct udphdr);
 
 	if(ntohs(udp->dest)==DHCP_CLIENT_PORT){
-		DhcpRecv(soc,ptr,udplen,eh,ip,udp);
+		DhcpRecv(device,ptr,udplen,eh,ip,udp);
 	}
 	else{
 		if(UdpSearchTable(ntohs(udp->dest))!=-1){
@@ -271,7 +271,7 @@ int	udplen;
 			printf("]\n");	
 		}
 		else{
-			IcmpSendDestinationUnreachable(soc,&ip->ip_src,ip,data,len);
+			IcmpSendDestinationUnreachable(device,&ip->ip_src,ip,data,len);
 		}
 	}
 

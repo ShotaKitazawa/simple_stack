@@ -976,7 +976,7 @@ u_int32_t	l;
 	return(size);
 }
 
-int DhcpSendDiscover(int soc)
+int DhcpSendDiscover(device_t *device)
 {
 int	size;
 struct dhcp_packet	pa;
@@ -988,14 +988,14 @@ struct in_addr	saddr,daddr;
 	size=MakeDhcpRequest(&pa,DHCPDISCOVER,NULL,NULL,NULL);
 
 printf("--- DHCP ---{\n");
-	UdpSendLink(soc,Param.vmac,BcastMac,&saddr,&daddr,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
+	UdpSendLink(device,Param.vmac,BcastMac,&saddr,&daddr,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
 print_dhcp(&pa,size);
 printf("}\n");
 
 	return(0);
 }
 
-int DhcpSendRequest(int soc,struct in_addr *yiaddr,struct in_addr *server)
+int DhcpSendRequest(device_t *device,struct in_addr *yiaddr,struct in_addr *server)
 {
 int	size;
 struct dhcp_packet	pa;
@@ -1007,14 +1007,14 @@ struct in_addr	saddr,daddr;
 	size=MakeDhcpRequest(&pa,DHCPREQUEST,NULL,yiaddr,server);
 
 printf("--- DHCP ---{\n");
-	UdpSendLink(soc,Param.vmac,BcastMac,&saddr,&daddr,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
+	UdpSendLink(device,Param.vmac,BcastMac,&saddr,&daddr,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
 print_dhcp(&pa,size);
 printf("}\n");
 
 	return(0);
 }
 
-int DhcpSendRequestUni(int soc)
+int DhcpSendRequestUni(device_t *device)
 {
 int	size;
 struct dhcp_packet	pa;
@@ -1022,14 +1022,14 @@ struct dhcp_packet	pa;
 	size=MakeDhcpRequest(&pa,DHCPREQUEST,&Param.vip,&Param.vip,&Param.DhcpServer);
 
 printf("--- DHCP ---{\n");
-	UdpSend(soc,&Param.vip,&Param.DhcpServer,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
+	UdpSend(device,&Param.vip,&Param.DhcpServer,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
 print_dhcp(&pa,size);
 printf("}\n");
 
 	return(0);
 }
 
-int DhcpSendRelease(int soc)
+int DhcpSendRelease(device_t *device)
 {
 int	size;
 struct dhcp_packet	pa;
@@ -1037,14 +1037,14 @@ struct dhcp_packet	pa;
 	size=MakeDhcpRequest(&pa,DHCPRELEASE,&Param.vip,NULL,&Param.DhcpServer);
 
 printf("--- DHCP ---{\n");
-	UdpSend(soc,&Param.vip,&Param.DhcpServer,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
+	UdpSend(device,&Param.vip,&Param.DhcpServer,DHCP_CLIENT_PORT,DHCP_SERVER_PORT,1,(u_int8_t *)&pa,size);
 print_dhcp(&pa,size);
 printf("}\n");
 
 	return(0);
 }
 
-int DhcpRecv(int soc,u_int8_t *data,int len,struct ether_header *eh,struct ip *ip,struct udphdr *udp)
+int DhcpRecv(device_t *device,u_int8_t *data,int len,struct ether_header *eh,struct ip *ip,struct udphdr *udp)
 {
 char	buf1[80];
 struct dhcp_packet	*ppa;
@@ -1071,7 +1071,7 @@ printf("]\n");
 		dhcp_get_option(ppa,len,53,&type);
 		if(type==DHCPOFFER){
 			dhcp_get_option(ppa,len,54,&server.s_addr);
-			DhcpSendRequest(soc,&ppa->yiaddr,&server);
+			DhcpSendRequest(device,&ppa->yiaddr,&server);
 		}
 		else if(type==DHCPACK){
 			Param.vip.s_addr=ppa->yiaddr.s_addr;
@@ -1095,19 +1095,19 @@ printf("DHCP lease time=%d\n",Param.DhcpLeaseTime);
 			Param.DhcpServer.s_addr=0;
 			Param.DhcpStartTime=0;
 			Param.DhcpLeaseTime=0;
-			DhcpSendDiscover(soc);
+			DhcpSendDiscover(device);
 		}
 	}
 
 	return(0);
 }
 
-int DhcpCheck(int soc)
+int DhcpCheck(device_t *device)
 {
 	if(time(NULL)-Param.DhcpStartTime>=Param.DhcpLeaseTime/2){
 		Param.DhcpStartTime+=Param.DhcpLeaseTime/2;
 		Param.DhcpLeaseTime/=2;
-		if(DhcpSendRequestUni(soc)==-1){
+		if(DhcpSendRequestUni(device)==-1){
 printf("DhcpCheck:DhcpSendRequestUni:error\n");
 			Param.vip.s_addr=0;
 			Param.vmask.s_addr=0;
@@ -1115,7 +1115,7 @@ printf("DhcpCheck:DhcpSendRequestUni:error\n");
 			Param.DhcpServer.s_addr=0;
 			Param.DhcpStartTime=0;
 			Param.DhcpLeaseTime=0;
-			DhcpSendDiscover(soc);
+			DhcpSendDiscover(device);
 		}
 	}
 	if(time(NULL)-Param.DhcpStartTime>=Param.DhcpLeaseTime){
@@ -1126,7 +1126,7 @@ printf("DhcpCheck:lease timeout\n");
 		Param.DhcpServer.s_addr=0;
 		Param.DhcpStartTime=0;
 		Param.DhcpLeaseTime=0;
-		DhcpSendDiscover(soc);
+		DhcpSendDiscover(device);
 	}
 
 	return(0);

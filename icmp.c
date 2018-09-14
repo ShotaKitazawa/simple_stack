@@ -72,7 +72,7 @@ static char	*icmp_type[]={
 	return(0);
 }
 
-int IcmpSendEchoReply(int soc,struct ip *r_ip,struct icmp *r_icmp,u_int8_t *data,int len,int ip_ttl)
+int IcmpSendEchoReply(device_t *device,struct ip *r_ip,struct icmp *r_icmp,u_int8_t *data,int len,int ip_ttl)
 {
 u_int8_t	*ptr;
 u_int8_t	sbuf[64*1024];
@@ -95,14 +95,14 @@ struct icmp	*icmp;
 	icmp->icmp_cksum=checksum(sbuf,ptr-sbuf);
 
 printf("=== ICMP reply ===[\n");
-	IpSend(soc,&r_ip->ip_dst,&r_ip->ip_src,IPPROTO_ICMP,0,ip_ttl,sbuf,ptr-sbuf);
+	IpSend(device,&r_ip->ip_dst,&r_ip->ip_src,IPPROTO_ICMP,0,ip_ttl,sbuf,ptr-sbuf);
 print_icmp(icmp);
 printf("]\n");
 
 	return (0);
 }
 
-int IcmpSendEcho(int soc,struct in_addr *daddr,int seqNo,int size)
+int IcmpSendEcho(device_t *device,struct in_addr *daddr,int seqNo,int size)
 {
 int	i,psize;
 u_int8_t	*ptr;
@@ -128,7 +128,7 @@ struct icmp	*icmp;
 	icmp->icmp_cksum=checksum((u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== ICMP echo ===[\n");
-	IpSend(soc,&Param.vip,daddr,IPPROTO_ICMP,0,Param.IpTTL,sbuf,ptr-sbuf);
+	IpSend(device,&Param.vip,daddr,IPPROTO_ICMP,0,Param.IpTTL,sbuf,ptr-sbuf);
 print_icmp(icmp);
 printf("]\n");
 
@@ -137,7 +137,7 @@ printf("]\n");
 	return (0);
 }
 
-int IcmpSendDestinationUnreachable(int soc,struct in_addr *daddr,struct ip *ip,u_int8_t *data,int len)
+int IcmpSendDestinationUnreachable(device_t *device,struct in_addr *daddr,struct ip *ip,u_int8_t *data,int len)
 {
 u_int8_t	*ptr;
 u_int8_t	sbuf[64*1024];
@@ -167,26 +167,26 @@ struct icmp	*icmp;
 	icmp->icmp_cksum=checksum((u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== ICMP Destination Unreachable ===[\n");
-	IpSend(soc,&Param.vip,daddr,IPPROTO_ICMP,0,Param.IpTTL,sbuf,ptr-sbuf);
+	IpSend(device,&Param.vip,daddr,IPPROTO_ICMP,0,Param.IpTTL,sbuf,ptr-sbuf);
 print_icmp(icmp);
 printf("]\n");
 
 	return (0);
 }
 
-int PingSend(int soc,struct in_addr *daddr,int size)
+int PingSend(device_t *device,struct in_addr *daddr,int size)
 {
 int	i;
 
 	for(i=0;i<PING_SEND_NO;i++){
-		IcmpSendEcho(soc,daddr,i+1,size);
+		IcmpSendEcho(device,daddr,i+1,size);
 		sleep(1);
 	}
 
 	return(0);
 }
 
-int IcmpRecv(int soc,u_int8_t *raw,int raw_len,struct ether_header *eh,struct ip *ip,u_int8_t *data,int len)
+int IcmpRecv(device_t *device,u_int8_t *raw,int raw_len,struct ether_header *eh,struct ip *ip,u_int8_t *data,int len)
 {
 struct icmp	*icmp;
 u_int16_t	sum;
@@ -211,7 +211,7 @@ print_ip(ip);
 print_icmp(icmp);
 printf("]\n");
 		if(icmp->icmp_type==ICMP_ECHO){
-			IcmpSendEchoReply(soc,ip,icmp,ptr,len,Param.IpTTL);
+			IcmpSendEchoReply(device,ip,icmp,ptr,len,Param.IpTTL);
 		}
 		else if(icmp->icmp_type==ICMP_ECHOREPLY){
 			PingCheckReply(ip,icmp);

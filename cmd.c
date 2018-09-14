@@ -111,7 +111,7 @@ int	size;
 	else{
 		size=atoi(ptr);
 	}
-	PingSend(device->sock,&daddr,size);
+	PingSend(device,&daddr,size);
 
 	return(0);
 }
@@ -205,7 +205,7 @@ int	no,ret;
 			return(-1);
 		}
 		MakeString(ptr);
-		UdpSend(device->sock,&Param.vip,&daddr,sport,dport,0,(u_int8_t *)ptr,strlen(ptr));
+		UdpSend(device,&Param.vip,&daddr,sport,dport,0,(u_int8_t *)ptr,strlen(ptr));
 	}
 	else{
 		printf("DoCmdUdp:[%s] unknown\n",ptr);
@@ -241,7 +241,7 @@ int	no,ret;
 			return(-1);
 		}
 		port=atoi(ptr);
-		ret=TcpClose(device->sock,port);
+		ret=TcpClose(device,port);
 		printf("DoCmdTcp:ret=%d\n",ret);
 	}
 	else if(strcmp(ptr,"reset")==0){
@@ -250,7 +250,7 @@ int	no,ret;
 			return(-1);
 		}
 		port=atoi(ptr);
-		ret=TcpReset(device->sock,port);
+		ret=TcpReset(device,port);
 		printf("DoCmdTcp:ret=%d\n",ret);
 	}
 	else if(strcmp(ptr,"connect")==0){
@@ -274,7 +274,7 @@ int	no,ret;
 		}
 		inet_aton(p_addr,&daddr);
 		dport=atoi(p_port);
-		TcpConnect(device->sock,sport,&daddr,dport);
+		TcpConnect(device,sport,&daddr,dport);
 	}
 	else if(strcmp(ptr,"send")==0){
 		u_int16_t	sport;
@@ -290,7 +290,7 @@ int	no,ret;
 			return(-1);
 		}
 		MakeString(ptr);
-		TcpSend(device->sock,sport,(u_int8_t *)ptr,strlen(ptr));
+		TcpSend(device,sport,(u_int8_t *)ptr,strlen(ptr));
 	}
 	else{
 		printf("DoCmdTcp:[%s] unknown\n",ptr);

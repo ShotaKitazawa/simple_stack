@@ -258,7 +258,7 @@ int	no;
 	return(0);
 }
 
-int TcpSendSyn(int soc,int no,int ackFlag)
+int TcpSendSyn(device_t *device,int no,int ackFlag)
 {
 u_int8_t        *ptr;
 u_int8_t        sbuf[DEFAULT_MTU-sizeof(struct ip)];
@@ -287,7 +287,7 @@ struct tcphdr   *tcp;
         tcp->check=TcpChecksum(&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,(u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== TCP ===[\n");
-        IpSend(soc,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
+        IpSend(device,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
 print_tcp(tcp);
 printf("]\n");
 
@@ -296,7 +296,7 @@ printf("]\n");
 	return(0);
 }
 
-int TcpSendFin(int soc,int no)
+int TcpSendFin(device_t *device,int no)
 {
 u_int8_t        *ptr;
 u_int8_t        sbuf[DEFAULT_MTU-sizeof(struct ip)];
@@ -325,7 +325,7 @@ struct tcphdr   *tcp;
         tcp->check=TcpChecksum(&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,(u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== TCP ===[\n");
-        IpSend(soc,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
+        IpSend(device,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
 print_tcp(tcp);
 printf("]\n");
 
@@ -334,7 +334,7 @@ printf("]\n");
 	return(0);
 }
 
-int TcpSendRst(int soc,int no)
+int TcpSendRst(device_t *device,int no)
 {
 u_int8_t        *ptr;
 u_int8_t        sbuf[DEFAULT_MTU-sizeof(struct ip)];
@@ -363,7 +363,7 @@ struct tcphdr   *tcp;
         tcp->check=TcpChecksum(&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,(u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== TCP ===[\n");
-        IpSend(soc,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
+        IpSend(device,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
 print_tcp(tcp);
 printf("]\n");
 
@@ -372,7 +372,7 @@ printf("]\n");
 	return(0);
 }
 
-int TcpSendAck(int soc,int no)
+int TcpSendAck(device_t *device,int no)
 {
 u_int8_t        *ptr;
 u_int8_t        sbuf[sizeof(struct ether_header)+1500];
@@ -401,7 +401,7 @@ struct tcphdr   *tcp;
         tcp->check=TcpChecksum(&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,(u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== TCP ===[\n");
-        IpSend(soc,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
+        IpSend(device,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
 print_tcp(tcp);
 printf("]\n");
 
@@ -410,7 +410,7 @@ printf("]\n");
 	return(0);
 }
 
-int TcpSendRstDirect(int soc,struct ether_header *r_eh,struct ip *r_ip,struct tcphdr *r_tcp)
+int TcpSendRstDirect(device_t *device,struct ether_header *r_eh,struct ip *r_ip,struct tcphdr *r_tcp)
 {
 u_int8_t        *ptr;
 u_int8_t        sbuf[sizeof(struct ether_header)+1500];
@@ -439,14 +439,14 @@ struct tcphdr   *tcp;
         tcp->check=TcpChecksum(&Param.vip,&r_ip->ip_src,IPPROTO_TCP,(u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== TCP ===[\n");
-        IpSend(soc,&Param.vip,&r_ip->ip_src,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
+        IpSend(device,&Param.vip,&r_ip->ip_src,IPPROTO_TCP,1,Param.IpTTL,sbuf,ptr-sbuf);
 print_tcp(tcp);
 printf("]\n");
 
 	return(0);
 }
 
-int TcpConnect(int soc,u_int16_t sport,struct in_addr *daddr,u_int16_t dport)
+int TcpConnect(device_t *device,u_int16_t sport,struct in_addr *daddr,u_int16_t dport)
 {
 int     count,no;
 
@@ -460,7 +460,7 @@ int     count,no;
 	TcpTable[no].status=TCP_SYN_SENT;
         count=0;
 	do{
-		TcpSendSyn(soc,no,0);
+		TcpSendSyn(device,no,0);
 		DummyWait(DUMMY_WAIT_MS*(count+1));
 		printf("TcpConnect:%s\n",TcpStatusStr(TcpTable[no].status));
                 count++;
@@ -476,7 +476,7 @@ int     count,no;
         return(1);
 }
 
-int TcpClose(int soc,u_int16_t sport)
+int TcpClose(device_t *device,u_int16_t sport)
 {
 int	count,no;
 time_t	now_t;
@@ -489,7 +489,7 @@ time_t	now_t;
 		TcpTable[no].status=TCP_FIN_WAIT1;
 		count=0;
 		do{
-			TcpSendFin(soc,no);
+			TcpSendFin(device,no);
 			DummyWait(DUMMY_WAIT_MS*(count+1));
 			printf("TcpClose:status=%s\n",TcpStatusStr(TcpTable[no].status));
 			count++;
@@ -531,7 +531,7 @@ time_t	now_t;
         return(1);
 }
 
-int TcpReset(int soc,u_int16_t sport)
+int TcpReset(device_t *device,u_int16_t sport)
 {
 int	no;
 
@@ -539,27 +539,27 @@ int	no;
 		return(-1);
 	}
 
-	TcpSendRst(soc,no);
+	TcpSendRst(device,no);
 
 	TcpSocketClose(sport);
 
         return(1);
 }
 
-int TcpAllSocketClose(int soc)
+int TcpAllSocketClose(device_t *device)
 {
 int	i;
 
 	for(i=0;i<TCP_TABLE_NO;i++){
 		if(TcpTable[i].myPort!=0&&TcpTable[i].status==TCP_ESTABLISHED){
-			TcpClose(soc,TcpTable[i].myPort);
+			TcpClose(device,TcpTable[i].myPort);
 		}
 	}
 
 	return(0);
 }
 
-int TcpSendData(int soc,u_int16_t sport,u_int8_t *data,int len)
+int TcpSendData(device_t *device,u_int16_t sport,u_int8_t *data,int len)
 {
 u_int8_t        *ptr;
 u_int8_t        sbuf[DEFAULT_MTU-sizeof(struct ip)];
@@ -601,7 +601,7 @@ struct tcphdr   *tcp;
         tcp->check=TcpChecksum(&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,(u_int8_t *)sbuf,ptr-sbuf);
 
 printf("=== TCP ===[\n");
-	IpSend(soc,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,0,Param.IpTTL,sbuf,ptr-sbuf);
+	IpSend(device,&Param.vip,&TcpTable[no].dstAddr,IPPROTO_TCP,0,Param.IpTTL,sbuf,ptr-sbuf);
 print_tcp(tcp);
 print_hex(data,len);
 printf("]\n");
@@ -611,7 +611,7 @@ printf("]\n");
         return(0);
 }
 
-int TcpSend(int soc,u_int16_t sport,u_int8_t *data,int len)
+int TcpSend(device_t *device,u_int16_t sport,u_int8_t *data,int len)
 {
 u_int8_t	*ptr;
 int	count,no;
@@ -639,7 +639,7 @@ int	lest,sndLen;
 
 		count=0;
 		do{
-			TcpSendData(soc,sport,ptr,sndLen);
+			TcpSendData(device,sport,ptr,sndLen);
 			DummyWait(DUMMY_WAIT_MS*(count+1));
 			printf("TcpSend:una=%u,nextSeq=%u\n",TcpTable[no].snd.una-TcpTable[no].snd.iss,TcpTable[no].snd.nxt-TcpTable[no].snd.iss);
 			count++;
@@ -658,7 +658,7 @@ int	lest,sndLen;
 	return(1);
 }
 
-int TcpRecv(int soc,struct ether_header *eh,struct ip *ip,u_int8_t *data,int len)
+int TcpRecv(device_t *device,struct ether_header *eh,struct ip *ip,u_int8_t *data,int len)
 {
 struct tcphdr	*tcp;
 u_int8_t	*ptr=data;
@@ -713,7 +713,7 @@ int	no,lest,tcplen;
 					TcpTable[no].rcv.irs=ntohl(tcp->seq);
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq)+1;
 					TcpTable[no].snd.una=ntohl(tcp->ack_seq);
-					TcpSendAck(soc,no);
+					TcpSendAck(device,no);
 				}
 			}
 			else if(TcpTable[no].status==TCP_SYN_RECV){
@@ -739,7 +739,7 @@ int	no,lest,tcplen;
 					TcpTable[no].dstPort=ntohs(tcp->source);
 					TcpTable[no].rcv.irs=ntohl(tcp->seq)+1;
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq)+1;
-					TcpSendSyn(soc,no,1);
+					TcpSendSyn(device,no,1);
 				}
 			}
 			else if(TcpTable[no].status==TCP_FIN_WAIT1){
@@ -755,7 +755,7 @@ int	no,lest,tcplen;
 					TcpTable[no].status=TCP_CLOSING;
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq)+tcplen+1;
 					TcpTable[no].snd.una=ntohl(tcp->ack_seq);
-					TcpSendAck(soc,no);
+					TcpSendAck(device,no);
 					if(tcp->ack==1){
 						printf("TcpRecv:TCP_CLOSE:fin-ack:%d\n",no);
 						TcpTable[no].status=TCP_TIME_WAIT;
@@ -781,7 +781,7 @@ int	no,lest,tcplen;
 					TcpTable[no].status=TCP_TIME_WAIT;
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq)+tcplen+1;
 					TcpTable[no].snd.una=ntohl(tcp->ack_seq);
-					TcpSendAck(soc,no);
+					TcpSendAck(device,no);
 				}
 			}
 			else if(TcpTable[no].status==TCP_CLOSING){
@@ -828,12 +828,12 @@ int	no,lest,tcplen;
 					TcpTable[no].status=TCP_CLOSE_WAIT;
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq)+tcplen+1;
 					TcpTable[no].snd.una=ntohl(tcp->ack_seq);
-					TcpSendFin(soc,no);
+					TcpSendFin(device,no);
 				}
 				else if(tcplen>0){
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq)+tcplen;
 					TcpTable[no].snd.una=ntohl(tcp->ack_seq);
-					TcpSendAck(soc,no);
+					TcpSendAck(device,no);
 				}
 				else{
 					TcpTable[no].rcv.nxt=ntohl(tcp->seq);
@@ -848,7 +848,7 @@ int	no,lest,tcplen;
 	}
 	else{
 		printf("TcpRecv:no target:%u\n",ntohs(tcp->dest));
-		TcpSendRstDirect(soc,eh,ip,tcp);
+		TcpSendRstDirect(device,eh,ip,tcp);
 	}
 
 	return(0);
